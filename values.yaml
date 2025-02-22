@@ -1,3 +1,4 @@
+namespace: circuit-breaker-app
 replicaCount: 3
 
 image:
