@@ -2,7 +2,7 @@ namespace: circuit-breaker-app
 replicaCount: 3
 
 image:
-  repository: 
+  repository: d4rkghost47/python-circuit-svc-3
   pullPolicy: IfNotPresent
   tag: 
 
@@ -46,12 +46,12 @@ resources:
 
 livenessProbe:
   httpGet:
-    path: /
+    path: /health
     port: http
 
 readinessProbe:
   httpGet:
-    path: /
+    path: /health
     port: http
 
 autoscaling:

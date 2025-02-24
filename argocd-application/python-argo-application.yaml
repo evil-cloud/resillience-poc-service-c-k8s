@@ -1,13 +1,12 @@
-# ArgoCD Application
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: python-app
+  name: python-svc-3
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: git@github.com:evilDr4gon/python-docker-jenkins-k8s.git
+    repoURL: git@github.com:evil-cloud/resillience-poc-service-c-k8s.git
     targetRevision: HEAD
     path: .
     helm:
@@ -16,11 +15,9 @@ spec:
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: application
+    namespace: circuit-breaker-app
 
   syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
     automated:
       prune: true
       selfHeal: true
