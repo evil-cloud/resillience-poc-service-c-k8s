@@ -2,11 +2,10 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "python-app.fullname" . }}-pdb
+  name: {{ include "service-c.fullname" . }}-pdb
 spec:
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
-      {{- include "python-app.selectorLabels" . | nindent 6 }}
+      {{- include "service-c.selectorLabels" . | nindent 6 }}
 {{- end }}
-
