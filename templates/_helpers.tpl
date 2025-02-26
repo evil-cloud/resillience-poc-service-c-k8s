@@ -43,6 +43,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Istio-specific labels (Only for Deployment, Service, and ServiceAccount)
+*/}}
+{{- define "service-c.istioLabels" -}}
+app: {{ include "service-c.fullname" . }}
+version: {{ .Values.version | default .Chart.AppVersion }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "service-c.selectorLabels" -}}
