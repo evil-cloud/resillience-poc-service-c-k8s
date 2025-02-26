@@ -23,6 +23,7 @@ spec:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
       labels:
         {{- include "service-c.labels" . | nindent 8 }}
+        {{- include "service-c.istioLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "service-c.serviceAccountName" . }}
       securityContext:
