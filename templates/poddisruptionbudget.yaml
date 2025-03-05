@@ -1,11 +1,12 @@
-{{- if .Values.podDisruptionBudget.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "service-c.fullname" . }}-pdb
+  name: {{ include "rollout-k8s.fullname" . }}-pdb
+  labels:
+    {{- include "rollout-k8s.labels" . | nindent 4 }}
 spec:
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
-      {{- include "service-c.selectorLabels" . | nindent 6 }}
-{{- end }}
+      {{- include "rollout-k8s.selectorLabels" . | nindent 6 }}
+

@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "rollout-k8s.fullname" . }}-rollout
+  labels:
+    app: {{ include "rollout-k8s.fullname" . }}
+spec:
+  replicas: {{ .Values.rollout.replicas }}
+  strategy:
+    canary:
+      steps:
+        {{- range .Values.rollout.strategy.steps }}
+        - setWeight: {{ .setWeight }}
+        {{- if .pause }}
+          {{- if .pause.enabled }}
+        - pause: { duration: {{ .pause.duration }} }
+          {{- end }}
+        {{- end }}
+        {{- if .analysis }}
+          {{- if .analysis.enabled }}
+        - analysis:
+            templates:
+              - templateName: {{ include "rollout-k8s.fullname" $ }}-{{ .analysis.templateName }}
+            startingStep: {{ .analysis.startingStep }}
+            failureLimit: 0
+          {{- end }}
+        {{- end }}
+        {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "rollout-k8s.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "rollout-k8s.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "rollout-k8s.fullname" . }}-sa
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "rollout-k8s.name" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          {{- end }}
+      volumes:
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+

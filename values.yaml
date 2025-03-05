@@ -1,64 +1,116 @@
-namespace: circuit-breaker-app
-replicaCount: 3
-
+nameOverride: python-service-c
+fullnameOverride: python-service-c
 image:
   repository: d4rkghost47/python-circuit-svc-3
   pullPolicy: IfNotPresent
   tag: 0b6e8a72
-
 version: v1
-
 serviceAccount:
   create: true
   automount: true
   annotations: {}
   name: ""
-
 podSecurityContext:
   runAsUser: 1000
   runAsGroup: 3000
   fsGroup: 2000
   seccompProfile:
     type: RuntimeDefault
-
 securityContext:
   capabilities:
     drop:
-      - ALL
-  readOnlyRootFilesystem: true
+    - ALL
+  readOnlyRootFilesystem: false
   runAsNonRoot: true
   allowPrivilegeEscalation: false
-
 service:
   type: ClusterIP
   port: 8000
-  targetPort: 8000
-
+ingress:
+  enabled: false
 podDisruptionBudget:
   enabled: true
-  minAvailable: 2
-
+  minAvailable: 1
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
     cpu: 250m
     memory: 256Mi
-
+  requests:
+    cpu: 100m
+    memory: 128Mi
 livenessProbe:
   httpGet:
     path: /health
-    port: http
-
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
 readinessProbe:
   httpGet:
     path: /health
-    port: http
-
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
 autoscaling:
   enabled: true
-  minReplicas: 3
-  maxReplicas: 5
+  minReplicas: 5
+  maxReplicas: 15
   targetCPUUtilizationPercentage: 80
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    telemetryPath: /metrics
+    labels:
+      release: prom
+    timeout: 20s
+analysisTemplates:
+- name: success-rate-analysis
+  prometheus:
+    address: http://prom-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+  conditions:
+    success: result >= 0.95
+    failure: result < 0.90
+  query: ""
+rollout:
+  replicas: 10
+  strategy:
+    steps:
+    - setWeight: 10
+      pause:
+        enabled: true
+        duration: 60s
+      analysis:
+        enabled: true
+        templateName: success-rate-analysis
+        startingStep: 1
+    - setWeight: 25
+      analysis:
+        enabled: true
+        templateName: success-rate-analysis
+        startingStep: 2
+    - setWeight: 50
+      pause:
+        enabled: false
+        duration: 90s
+      analysis:
+        enabled: true
+        templateName: success-rate-analysis
+        startingStep: 3
+    - setWeight: 75
+      pause:
+        enabled: true
+        duration: 120s
+      analysis:
+        enabled: true
+        templateName: success-rate-analysis
+        startingStep: 4
+    - setWeight: 100
+      pause:
+        enabled: true
+        duration: 60s
+      analysis:
+        enabled: true
+        templateName: success-rate-analysis
+        startingStep: 5
 

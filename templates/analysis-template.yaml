@@ -1,0 +1,33 @@
+{{- range .Values.analysisTemplates }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "rollout-k8s.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  metrics:
+    - name: {{ .name }}
+      interval: 30s
+      count: 1
+      successCondition: "{{ .conditions.success }}"
+      failureCondition: "{{ .conditions.failure }}"
+      provider:
+        prometheus:
+          address: "{{ .prometheus.address }}"
+          query: |
+            {{- if .query }}
+            {{ .query }}
+            {{- else }}
+            scalar(
+              sum(rate(http_requests_total{job="{{ include "rollout-k8s.fullname" $ }}",
+                                           namespace="{{ $.Release.Namespace }}",
+                                           service="{{ include "rollout-k8s.fullname" $ }}",
+                                           status=~"2.."}[5m])) /
+              sum(rate(http_requests_total{job="{{ include "rollout-k8s.fullname" $ }}",
+                                           namespace="{{ $.Release.Namespace }}",
+                                           service="{{ include "rollout-k8s.fullname" $ }}"}[5m]))
+            )
+            {{- end }}
+---
+{{- end }}
+
