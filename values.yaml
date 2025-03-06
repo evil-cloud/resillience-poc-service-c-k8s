@@ -73,7 +73,7 @@ analysisTemplates:
     failure: result < 0.90
   query: ""
 rollout:
-  replicas: 10
+  replicas: 5
   strategy:
     steps:
     - setWeight: 10
